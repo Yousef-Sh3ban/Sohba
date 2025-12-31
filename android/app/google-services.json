@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352847098524",
+    "project_id": "sohba1",
+    "storage_bucket": "sohba1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352847098524:android:845560d0fd28d525443359",
+        "android_client_info": {
+          "package_name": "com.example.sohba"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADZntOfCsqtnYDQQ_7-rDg3muJK29dPyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
