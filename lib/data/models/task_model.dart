@@ -59,6 +59,7 @@ class TaskModel {
     );
   }
 
+  //is this used ??
   /// إنشاء نموذج من خريطة JSON.
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
@@ -73,6 +74,7 @@ class TaskModel {
     );
   }
 
+  //is this used ??
   /// تحويل النموذج إلى خريطة JSON.
   Map<String, dynamic> toJson() {
     return {
@@ -100,6 +102,7 @@ class TaskModel {
     }
   }
 
+  //is this used ??
   /// إنشاء نسخة معدلة من النموذج.
   TaskModel copyWith({
     String? id,
@@ -123,15 +126,18 @@ class TaskModel {
     );
   }
 
+  //is this used ??
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is TaskModel && other.id == id;
   }
 
+  //is this used ??
   @override
   int get hashCode => id.hashCode;
 
+  //is this used ??
   @override
   String toString() => 'TaskModel(id: $id, title: $title, points: $points)';
 }

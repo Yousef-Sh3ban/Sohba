@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/services/app_services.dart';
+import '../features/group_details/presentation/screens/dashboard_controller.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 
@@ -61,24 +64,30 @@ class SohbaAppState extends State<SohbaApp> {
   @override
   Widget build(BuildContext context) {
     final router = AppRouter.createRouter(
-      hasUserName: widget.hasUserName,
+      authState: AppServices.instance.authState,
       hasGroups: widget.hasGroups,
     );
 
-    return MaterialApp.router(
-      title: 'صحبة',
-      debugShowCheckedModeBanner: false,
-      scrollBehavior: const ScrollBehavior().copyWith(
-        physics: const BouncingScrollPhysics(),
+    return ChangeNotifierProvider(
+      create: (_) => DashboardController()..loadData(),
+      child: MaterialApp.router(
+        title: 'صحبة',
+        debugShowCheckedModeBanner: false,
+        scrollBehavior: const ScrollBehavior().copyWith(
+          physics: const BouncingScrollPhysics(),
+        ),
+        locale: const Locale('ar'),
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: _themeMode,
+        routerConfig: router,
+        builder: (context, child) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          );
+        },
       ),
-      locale: const Locale('ar'),
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: _themeMode,
-      routerConfig: router,
-      builder: (context, child) {
-        return Directionality(textDirection: TextDirection.rtl, child: child!);
-      },
     );
   }
 }

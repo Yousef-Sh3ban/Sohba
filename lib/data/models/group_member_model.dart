@@ -17,6 +17,9 @@ class GroupMemberModel {
   /// أطول Streak حققها العضو.
   final int longestStreak;
 
+  /// آخر يوم تم فيه تحديث الـ streak (بصيغة YYYY-MM-DD).
+  final String? lastStreakDate;
+
   /// إجمالي النقاط على مدار كل الأيام.
   final int totalPoints;
 
@@ -26,6 +29,7 @@ class GroupMemberModel {
     required this.joinedAt,
     required this.currentStreak,
     required this.longestStreak,
+    this.lastStreakDate,
     this.totalPoints = 0,
   });
 
@@ -51,6 +55,7 @@ class GroupMemberModel {
       joinedAt: DateTime.parse(json['joined_at'] as String),
       currentStreak: json['current_streak'] as int? ?? 0,
       longestStreak: json['longest_streak'] as int? ?? 0,
+      lastStreakDate: json['last_streak_date'] as String?,
       totalPoints: json['total_points'] as int? ?? 0,
     );
   }
@@ -63,6 +68,7 @@ class GroupMemberModel {
       'joined_at': joinedAt.toIso8601String(),
       'current_streak': currentStreak,
       'longest_streak': longestStreak,
+      'last_streak_date': lastStreakDate,
       'total_points': totalPoints,
     };
   }
@@ -74,6 +80,7 @@ class GroupMemberModel {
     DateTime? joinedAt,
     int? currentStreak,
     int? longestStreak,
+    String? lastStreakDate,
     int? totalPoints,
   }) {
     return GroupMemberModel(
@@ -82,6 +89,7 @@ class GroupMemberModel {
       joinedAt: joinedAt ?? this.joinedAt,
       currentStreak: currentStreak ?? this.currentStreak,
       longestStreak: longestStreak ?? this.longestStreak,
+      lastStreakDate: lastStreakDate ?? this.lastStreakDate,
       totalPoints: totalPoints ?? this.totalPoints,
     );
   }

@@ -42,7 +42,7 @@ class GroupModel {
       inviteCode: inviteCode,
       adminId: adminId,
       createdAt: DateTime.now(),
-      memberCount: 1, // المنشئ هو العضو الأول
+      memberCount: 0, // سيتم زيادته عند إضافة المنشئ كعضو
     );
   }
 
@@ -70,6 +70,7 @@ class GroupModel {
     };
   }
 
+  // is this used ??
   /// إنشاء نسخة معدلة من النموذج.
   GroupModel copyWith({
     String? id,
@@ -95,15 +96,18 @@ class GroupModel {
   /// التحقق من إمكانية إضافة أعضاء جدد.
   bool get canAddMembers => memberCount < 50;
 
+  // is this uesd ??
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is GroupModel && other.id == id;
   }
 
+  // is this uesd ??
   @override
   int get hashCode => id.hashCode;
 
+  // is this uesd ??
   @override
   String toString() => 'GroupModel(id: $id, name: $name)';
 }

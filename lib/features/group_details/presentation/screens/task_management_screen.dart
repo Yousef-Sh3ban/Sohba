@@ -198,6 +198,35 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                 ? _buildEmptyState()
                 : _buildTasksList(),
           ),
+          if (!_isLoading && _tasks.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    offset: const Offset(0, -4),
+                    blurRadius: 16,
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: FilledButton.icon(
+                  onPressed: _showAddTaskSheet,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('إضافة مهمة جديدة'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -218,19 +247,13 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Add button
-              Container(
-                decoration: BoxDecoration(
+              // Back button
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_forward_ios_rounded,
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.add_rounded,
-                    color: AppTheme.primaryColor,
-                  ),
-                  onPressed: _showAddTaskSheet,
-                ),
+                onPressed: () => context.pop(),
               ),
               const Spacer(),
               // Title
@@ -252,14 +275,6 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                 ],
               ),
               const Spacer(),
-              // Back button
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Colors.white,
-                ),
-                onPressed: () => context.pop(),
-              ),
               const SizedBox(width: 48), // Balance
             ],
           ),
@@ -305,9 +320,113 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
             icon: const Icon(Icons.add_rounded),
             label: const Text('إضافة مهمة'),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _addDailyWorshipTasks,
+            icon: const Icon(Icons.mosque_rounded),
+            label: const Text('إضافة العبادات اليومية'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.primaryColor,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _addDailyWorshipTasks() async {
+    if (_groupId == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة العبادات اليومية'),
+        content: const Text(
+          'سيتم إضافة 7 مهام جاهزة للعبادات اليومية.\n\nهل تريد المتابعة؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('إضافة'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final dailyTasks = [
+      {
+        'title': 'الصلوات الخمس في جماعة',
+        'description': null,
+        'points': 50,
+        'iconId': 'mosque',
+      },
+      {
+        'title': 'أذكار الصباح والمساء',
+        'description': 'قراءة بعض أو كل أذكار الصباح والمساء',
+        'points': 20,
+        'iconId': 'book',
+      },
+      {
+        'title': 'أذكار النوم',
+        'description': null,
+        'points': 5,
+        'iconId': 'helal',
+      },
+      {
+        'title': 'نصف جزء من القرآن',
+        'description': 'التعرض لنصف جزء من القرآن (استماع أو قراءة)',
+        'points': 40,
+        'iconId': 'quran',
+      },
+      {
+        'title': '20 د فيديو دعوي',
+        'description': 'سماع 20 د من أي فيديو دعوي حتى لا تضعف الهمة',
+        'points': 10,
+        'iconId': 'video',
+      },
+      {
+        'title': 'صلاة الوتر',
+        'description': 'لا تنم إلا إذا أوترت حتى لو بـ 10 آيات',
+        'points': 20,
+        'iconId': 'helal',
+      },
+      {
+        'title': 'صلاة الضحى',
+        'description': null,
+        'points': 5,
+        'iconId': 'star',
+      },
+    ];
+
+    try {
+      for (final task in dailyTasks) {
+        await AppServices.instance.taskRepository.addTask(
+          groupId: _groupId!,
+          title: task['title'] as String,
+          description: task['description'] as String?,
+          points: task['points'] as int,
+          iconId: task['iconId'] as String,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إضافة العبادات اليومية ✅')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('حدث خطأ أثناء الإضافة')));
+      }
+    }
   }
 
   Widget _buildTasksList() {
@@ -352,10 +471,9 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
           child: iconData.svgPath != null
               ? SvgPicture.asset(
                   iconData.svgPath!,
-                  colorFilter: ColorFilter.mode(
-                    iconData.color,
-                    BlendMode.srcIn,
-                  ),
+                  colorFilter: iconData.id == 'alaqsa'
+                      ? null
+                      : ColorFilter.mode(iconData.color, BlendMode.srcIn),
                 )
               : Icon(iconData.icon, color: iconData.color, size: 24),
         ),
@@ -370,16 +488,31 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.accentLight,
+                color: AppTheme.mainGold,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                '${task.points} ن',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.accentDark,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${task.points}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.cardColor,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  SvgPicture.asset(
+                    'assets/icons/medal.svg',
+                    width: 14,
+                    height: 14,
+                    colorFilter: const ColorFilter.mode(
+                      AppTheme.cardColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -674,12 +807,14 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                             child: iconData.svgPath != null
                                 ? SvgPicture.asset(
                                     iconData.svgPath!,
-                                    colorFilter: ColorFilter.mode(
-                                      isSelected
-                                          ? Colors.white
-                                          : iconData.color,
-                                      BlendMode.srcIn,
-                                    ),
+                                    colorFilter: iconData.id == 'alaqsa'
+                                        ? null
+                                        : ColorFilter.mode(
+                                            isSelected
+                                                ? Colors.white
+                                                : iconData.color,
+                                            BlendMode.srcIn,
+                                          ),
                                   )
                                 : Icon(
                                     iconData.icon,
@@ -714,7 +849,9 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: selectedIcon.color.withValues(alpha: 0.15),
+                              color: selectedIcon.id == 'alaqsa'
+                                  ? Colors.lightBlue.withValues(alpha: 0.1)
+                                  : selectedIcon.color.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: selectedIcon.svgPath != null
@@ -722,10 +859,12 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                                     padding: const EdgeInsets.all(10),
                                     child: SvgPicture.asset(
                                       selectedIcon.svgPath!,
-                                      colorFilter: ColorFilter.mode(
-                                        selectedIcon.color,
-                                        BlendMode.srcIn,
-                                      ),
+                                      colorFilter: selectedIcon.id == 'alaqsa'
+                                          ? null
+                                          : ColorFilter.mode(
+                                              selectedIcon.color,
+                                              BlendMode.srcIn,
+                                            ),
                                     ),
                                   )
                                 : Icon(
@@ -768,12 +907,27 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                               color: AppTheme.accentLight,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              '$_selectedPoints ن',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.accentDark,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$_selectedPoints',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.accentDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                SvgPicture.asset(
+                                  'assets/icons/medal.svg',
+                                  width: 16,
+                                  height: 16,
+                                  colorFilter: const ColorFilter.mode(
+                                    AppTheme.accentDark,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],

@@ -46,12 +46,6 @@ class TaskIcons {
 
     // Existing Material Icons (kept if no SVG replacement)
     TaskIconData(
-      id: 'prayer',
-      icon: Icons.self_improvement_rounded,
-      color: Color(0xFF1565C0),
-      label: 'صلاة',
-    ),
-    TaskIconData(
       id: 'book',
       icon: Icons.menu_book_rounded,
       color: Color(0xFF6A1B9A),

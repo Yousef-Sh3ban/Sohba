@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../data/repositories/group_repository.dart';
 import '../../data/repositories/task_repository.dart';
@@ -14,6 +15,8 @@ class AppServices {
   late final UserRepository userRepository;
   late final GroupRepository groupRepository;
   late final TaskRepository taskRepository;
+
+  final ValueNotifier<bool> authState = ValueNotifier(false);
 
   bool _initialized = false;
 

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/app_services.dart';
 import '../../../../core/utils/invite_code_generator.dart';
+import '../../../../core/widgets/animated_bottom_sheet.dart';
 import '../../../../data/models/group_model.dart';
 
-/// Bottom Sheet للانضمام لمجموعة موجودة.
+/// Bottom Sheet للانضمام لمجموعة موجودة مع animations سلسة.
 class JoinGroupSheet extends StatefulWidget {
   const JoinGroupSheet({required this.onGroupJoined, super.key});
 
@@ -100,127 +102,118 @@ class _JoinGroupSheetState extends State<JoinGroupSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // المقبض
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outline.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            // ═══════════════════════════════════════════════════════════════
+            // المقبض مع animation
+            // ═══════════════════════════════════════════════════════════════
+            const SheetHandle(),
             const SizedBox(height: 24),
 
-            // العنوان
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.login_rounded,
-                    color: colorScheme.secondary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'الانضمام لمجموعة',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                      Text(
-                        'أدخل كود الدعوة الذي حصلت عليه',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            // ═══════════════════════════════════════════════════════════════
+            // العنوان مع animations
+            // ═══════════════════════════════════════════════════════════════
+            SheetHeader(
+              icon: Icons.login_rounded,
+              iconBackgroundColor: colorScheme.secondaryContainer,
+              iconColor: colorScheme.secondary,
+              title: 'الانضمام لمجموعة',
+              subtitle: 'أدخل كود الدعوة الذي حصلت عليه',
+              delay: 100.ms,
             ),
             const SizedBox(height: 32),
 
-            // حقل الكود
-            Text('كود الدعوة', style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _codeController,
-              textCapitalization: TextCapitalization.characters,
-              textInputAction: TextInputAction.done,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-                LengthLimitingTextInputFormatter(6),
-                UpperCaseTextFormatter(),
-              ],
-              decoration: InputDecoration(
-                hintText: 'ABC123',
-                prefixIcon: const Icon(Icons.key_rounded),
-                errorText: _errorMessage,
+            // ═══════════════════════════════════════════════════════════════
+            // حقل الكود مع animation
+            // ═══════════════════════════════════════════════════════════════
+            AnimatedFormField(
+              delay: 250.ms,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('كود الدعوة', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _codeController,
+                    textCapitalization: TextCapitalization.characters,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                      LengthLimitingTextInputFormatter(6),
+                      UpperCaseTextFormatter(),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: 'ABC123',
+                      prefixIcon: const Icon(Icons.key_rounded),
+                      errorText: _errorMessage,
+                    ),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'الرجاء إدخال كود الدعوة';
+                      }
+                      if (!InviteCodeGenerator.isValidFormat(value)) {
+                        return 'كود غير صالح';
+                      }
+                      return null;
+                    },
+                    onFieldSubmitted: (_) => _joinGroup(),
+                  ),
+                ],
               ),
-              style: theme.textTheme.headlineSmall?.copyWith(
-                letterSpacing: 4,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'الرجاء إدخال كود الدعوة';
-                }
-                if (!InviteCodeGenerator.isValidFormat(value)) {
-                  return 'كود غير صالح';
-                }
-                return null;
-              },
-              onFieldSubmitted: (_) => _joinGroup(),
             ),
             const SizedBox(height: 24),
 
-            // زر الانضمام
-            FilledButton.icon(
-              onPressed: _isLoading ? null : _joinGroup,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.login_rounded),
-              label: const Text('انضمام'),
+            // ═══════════════════════════════════════════════════════════════
+            // زر الانضمام مع animation
+            // ═══════════════════════════════════════════════════════════════
+            AnimatedActionButton(
+              delay: 350.ms,
+              child: FilledButton.icon(
+                onPressed: _isLoading ? null : _joinGroup,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.login_rounded),
+                label: const Text('انضمام'),
+              ),
             ),
             const SizedBox(height: 16),
 
-            // ملاحظة
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
+            // ═══════════════════════════════════════════════════════════════
+            // ملاحظة مع animation
+            // ═══════════════════════════════════════════════════════════════
+            AnimatedInfoBox(
+              delay: 420.ms,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'احصل على كود الدعوة من صديقك الذي أنشأ المجموعة',
-                      style: theme.textTheme.bodySmall,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 20,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'احصل على كود الدعوة من صديقك الذي أنشأ المجموعة',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -1,5 +1,7 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
+
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,15 +45,28 @@ class DeviceIdService {
     final deviceInfo = DeviceInfoPlugin();
 
     try {
-      final androidInfo = await deviceInfo.androidInfo;
-      // استخدام Android ID كمعرف أساسي
-      final androidId = androidInfo.id;
-      final model = androidInfo.model;
-      final brand = androidInfo.brand;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidInfo = await deviceInfo.androidInfo;
+        // استخدام Android ID كمعرف أساسي
+        final androidId = androidInfo.id;
+        final model = androidInfo.model;
+        final brand = androidInfo.brand;
 
-      // دمج المعلومات لإنشاء معرف فريد
-      final combined = '$androidId-$brand-$model';
-      return combined.hashCode.toRadixString(36);
+        // دمج المعلومات لإنشاء معرف فريد
+        final combined = '$androidId-$brand-$model';
+        return combined.hashCode.toRadixString(36);
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        final identifier = iosInfo.identifierForVendor;
+        return identifier ??
+            DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+      } else if (defaultTargetPlatform == TargetPlatform.windows) {
+        final windowsInfo = await deviceInfo.windowsInfo;
+        return windowsInfo.deviceId;
+      } else {
+        // للمنصات الأخرى
+        return DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+      }
     } catch (e) {
       developer.log(
         'Error getting device info: $e',

@@ -199,6 +199,75 @@ class GroupRepository {
     }
   }
 
+  /// تحديث الـ Streak للعضو.
+  /// يُستدعى عند تحقيق 50%+ من النقاط في اليوم.
+  Future<void> updateStreak({
+    required String groupId,
+    required String userId,
+    required String todayKey,
+    required bool achieved50Percent,
+  }) async {
+    try {
+      final memberRef = _groupsRef
+          .doc(groupId)
+          .collection('members')
+          .doc(userId);
+      final memberDoc = await memberRef.get();
+
+      if (!memberDoc.exists) return;
+
+      final data = memberDoc.data()!;
+      final currentStreak = data['current_streak'] as int? ?? 0;
+      final longestStreak = data['longest_streak'] as int? ?? 0;
+      final lastStreakDate = data['last_streak_date'] as String?;
+
+      // حساب تاريخ الأمس
+      final today = DateTime.parse('${todayKey}T00:00:00');
+      final yesterday = today.subtract(const Duration(days: 1));
+      final yesterdayKey =
+          '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+      int newStreak;
+
+      if (achieved50Percent) {
+        // تم تحقيق الهدف اليوم
+        if (lastStreakDate == todayKey) {
+          // تم التحديث اليوم بالفعل، لا تغيير
+          return;
+        } else if (lastStreakDate == yesterdayKey) {
+          // استمرار السلسلة
+          newStreak = currentStreak + 1;
+        } else {
+          // بداية سلسلة جديدة
+          newStreak = 1;
+        }
+
+        final newLongest = newStreak > longestStreak
+            ? newStreak
+            : longestStreak;
+
+        await memberRef.update({
+          'current_streak': newStreak,
+          'longest_streak': newLongest,
+          'last_streak_date': todayKey,
+        });
+
+        developer.log(
+          'Streak updated for $userId: $newStreak (longest: $newLongest)',
+          name: 'sohba.group_repository',
+        );
+      }
+      // ملاحظة: لا نقوم بإعادة تعيين الـ streak هنا
+      // سيتم ذلك تلقائياً عند تحقيق 50% في يوم جديد
+    } catch (e) {
+      developer.log(
+        'Error updating streak: $e',
+        name: 'sohba.group_repository',
+        level: 900,
+      );
+    }
+  }
+
   /// الحصول على مجموعات المستخدم.
   Future<List<GroupModel>> getUserGroups(String userId) async {
     try {
@@ -261,18 +330,28 @@ class GroupRepository {
   }
 
   /// مغادرة المجموعة.
+  /// إذا أصبحت المجموعة فارغة بعد المغادرة، يتم حذفها.
   Future<void> leaveGroup(String groupId, String userId) async {
-    final batch = _firestore.batch();
+    // أولاً: الحصول على عدد الأعضاء الحالي
+    final group = await getGroup(groupId);
+    if (group == null) return;
 
     // حذف العضوية
-    batch.delete(_groupsRef.doc(groupId).collection('members').doc(userId));
+    await _groupsRef.doc(groupId).collection('members').doc(userId).delete();
 
-    // تقليل عدد الأعضاء
-    batch.update(_groupsRef.doc(groupId), {
-      'member_count': FieldValue.increment(-1),
-    });
-
-    await batch.commit();
+    // إذا كان آخر عضو، احذف المجموعة بالكامل
+    if (group.memberCount <= 1) {
+      await deleteGroup(groupId);
+      developer.log(
+        'Group $groupId deleted (empty)',
+        name: 'sohba.group_repository',
+      );
+    } else {
+      // تقليل عدد الأعضاء
+      await _groupsRef.doc(groupId).update({
+        'member_count': FieldValue.increment(-1),
+      });
+    }
   }
 
   /// طرد عضو من المجموعة (للأدمن فقط).

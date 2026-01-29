@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -53,15 +53,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         name: 'sohba.welcome',
       );
 
-      if (mounted) {
-        context.go('/');
-      }
+      // تحديث حالة المصادقة للانتقال للصفحة التالية تلقائياً
+      AppServices.instance.authState.value = true;
+      // لا حاجة لاستخدام context.go لأن Router سيقوم بالتحويل تلقائياً عند تغيير authState
     } catch (e) {
       developer.log('Error saving user: $e', name: 'sohba.welcome', level: 900);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('حدث خطأ، حاول مرة أخرى')));
+        ).showSnackBar(SnackBar(content: Text('حدث خطأ: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -170,8 +170,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   ),
                                 ),
                               )
-                            : const Icon(Icons.arrow_forward_rounded),
-                        label: const Text('ابدأ'),
+                            : SizedBox(),
+                        label: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('ابدأ'),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward_rounded),
+                          ],
+                        ),
                       ),
                     ],
                   ),

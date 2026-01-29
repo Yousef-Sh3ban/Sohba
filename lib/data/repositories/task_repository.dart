@@ -218,6 +218,13 @@ class TaskRepository {
         }
       });
 
+      // التحقق من تحقيق 50%+ وتحديث الـ Streak
+      await _checkAndUpdateStreak(
+        groupId: groupId,
+        userId: userId,
+        dateKey: dateKey,
+      );
+
       developer.log(
         'Task $taskId updated to ${status.value} for user $userId (points: $taskPoints)',
         name: 'sohba.task_repository',
@@ -240,6 +247,109 @@ class TaskRepository {
         return (maxPoints / 2).ceil();
       default:
         return 0;
+    }
+  }
+
+  /// التحقق من تحقيق 50%+ وتحديث الـ Streak.
+  Future<void> _checkAndUpdateStreak({
+    required String groupId,
+    required String userId,
+    required String dateKey,
+  }) async {
+    try {
+      // الحصول على جميع المهام
+      final tasksQuery = await _groupsRef
+          .doc(groupId)
+          .collection('tasks')
+          .get();
+      if (tasksQuery.docs.isEmpty) return;
+
+      int maxPoints = 0;
+      for (final doc in tasksQuery.docs) {
+        maxPoints += (doc.data()['points'] as int? ?? 0);
+      }
+      if (maxPoints == 0) return;
+
+      // الحصول على إنجازات اليوم
+      final completionDoc = await _groupsRef
+          .doc(groupId)
+          .collection('completions')
+          .doc(dateKey)
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      int earnedPoints = 0;
+      if (completionDoc.exists) {
+        final tasksMap =
+            completionDoc.data()?['tasks'] as Map<String, dynamic>? ?? {};
+        for (final doc in tasksQuery.docs) {
+          final taskId = doc.id;
+          final taskPoints = doc.data()['points'] as int? ?? 0;
+          final status = tasksMap[taskId] as String? ?? 'none';
+          earnedPoints += _calcPoints(status, taskPoints);
+        }
+      }
+
+      // حساب النسبة المئوية
+      final percentage = (earnedPoints / maxPoints) * 100;
+      final achieved50Percent = percentage >= 50;
+
+      // تحديث الـ streak إذا تم تحقيق 50%+
+      if (achieved50Percent) {
+        final memberRef = _groupsRef
+            .doc(groupId)
+            .collection('members')
+            .doc(userId);
+        final memberDoc = await memberRef.get();
+
+        if (!memberDoc.exists) return;
+
+        final data = memberDoc.data()!;
+        final currentStreak = data['current_streak'] as int? ?? 0;
+        final longestStreak = data['longest_streak'] as int? ?? 0;
+        final lastStreakDate = data['last_streak_date'] as String?;
+
+        // حساب تاريخ الأمس
+        final today = DateTime.parse('${dateKey}T00:00:00');
+        final yesterday = today.subtract(const Duration(days: 1));
+        final yesterdayKey =
+            '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+        int newStreak;
+
+        if (lastStreakDate == dateKey) {
+          // تم التحديث اليوم بالفعل
+          return;
+        } else if (lastStreakDate == yesterdayKey) {
+          // استمرار السلسلة
+          newStreak = currentStreak + 1;
+        } else {
+          // بداية سلسلة جديدة
+          newStreak = 1;
+        }
+
+        final newLongest = newStreak > longestStreak
+            ? newStreak
+            : longestStreak;
+
+        await memberRef.update({
+          'current_streak': newStreak,
+          'longest_streak': newLongest,
+          'last_streak_date': dateKey,
+        });
+
+        developer.log(
+          'Streak updated for $userId: $newStreak (longest: $newLongest)',
+          name: 'sohba.task_repository',
+        );
+      }
+    } catch (e) {
+      developer.log(
+        'Error checking streak: $e',
+        name: 'sohba.task_repository',
+        level: 900,
+      );
     }
   }
 

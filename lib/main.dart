@@ -21,5 +21,8 @@ void main() async {
   final hasUserName = prefs.getString(userNameKey) != null;
   final hasGroups = prefs.getString(lastGroupIdKey) != null;
 
+  // تحديث حالة المصادقة
+  AppServices.instance.authState.value = hasUserName;
+
   runApp(SohbaApp(hasUserName: hasUserName, hasGroups: hasGroups));
 }
