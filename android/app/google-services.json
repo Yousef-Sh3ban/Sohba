@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:352847098524:android:845560d0fd28d525443359",
+        "mobilesdk_app_id": "1:352847098524:android:ec66d8ab3e745bfd443359",
         "android_client_info": {
-          "package_name": "com.example.sohba"
+          "package_name": "com.sohba.app"
         }
       },
       "oauth_client": [],

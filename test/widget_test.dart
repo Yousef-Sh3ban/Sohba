@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:sohba/app/app.dart';
+import 'package:sohba/app.dart';
 
 void main() {
   testWidgets('App should build without errors', (WidgetTester tester) async {
